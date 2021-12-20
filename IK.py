@@ -1,77 +1,126 @@
 # -*- coding: utf-8 -*-
 
 from math import *
-import time
+#import time
 
 MIN_RXZ = 10
-
+MIN_THETA3 = 1e-3
 l1 = 90
 l2 = 90
 
-def IK(x, y, z):
+def legIK(p):
+    x = p[0]
+    y = p[1]
+    z = p[2]
+    
     r2 = x**2 + y**2 + z**2
     if(r2 > (l1+l2)**2):
-        #print("遠すぎィ！！")
         theta1 = 0.0
         theta2 = pi/2
         theta3 = 0.0
-
-        return theta1, theta2, theta3
+        rangeOut = True
+        
+        return [theta1, theta2, theta3], rangeOut
 
     rxz2 = x**2 + z**2
     rxz = rxz2**0.5
     if(rxz < MIN_RXZ):
-        #print("allzero")
         theta1 = 0.0
         theta2 = 0.0
         theta3 = 0.0
+        rangeOut = True
+
+        return [theta1, theta2, theta3], rangeOut
         
-    else:
-        theta3 = acos(-(l1**2+l2**2-r2)/(2*l1*l2))
-        lx = l2*sin(theta3)
-        al = atan2(-z, x)
-        lxrxz = lx/rxz
-        if(lx > rxz): # 丸め誤差などで起こりうる
-            lxrxz = 1.0
-        be = acos(lxrxz)
-        theta1 = be - al
-        zd = -x*sin(theta1) + z*cos(theta1)
-        theta2 = atan2(y, -zd)
+    theta3 = acos(-(l1**2+l2**2-r2)/(2*l1*l2))
+    if(theta3 < MIN_THETA3): # 脚が伸び切っていると特異点に入りやすいので除外
+        theta1 = 0.0
+        theta2 = 0.0
+        theta3 = 0.0
+        rangeOut = True
 
-    return theta1, theta2, theta3
+        return [theta1, theta2, theta3], rangeOut
+        
+    lx = l2*sin(theta3)
+    al = atan2(-z, x)
+    lxrxz = lx/rxz
+    if(lx > rxz): # 丸め誤差などで起こりうる
+        lxrxz = 1.0
+    be = acos(lxrxz)
+    theta1 = be - al
+    zd = -x*sin(theta1) + z*cos(theta1)
+    theta2 = atan2(y, -zd)
+    rangeOut = False
 
-def FK(theta1, theta2, theta3):
-    P03 = [-l1*sin(theta1)*cos(theta2),
-           l1*sin(theta2),
-           -l1*cos(theta1)*cos(theta2)]
-    P04 = [-l2*sin(theta3)*cos(theta1) + (-l2*cos(theta3) - l2)*sin(theta1)*cos(theta2),
-           -(-l2*cos(theta3) - l2)*sin(theta2),
-           l2*sin(theta1)*sin(theta3) + (-l2*cos(theta3) - l2)*cos(theta1)*cos(theta2)]
+    return [theta1, theta2, theta3], rangeOut
 
-    return P03, P04
+def legFK(theta, offset): # 関節の正回転方向と座標変換の正回転方向が逆の場合があるので注意
+    J12 = [0 + offset[0],
+           0 + offset[1],
+           0 + offset[2]]
+    J3 = [-l1*sin(-theta[0])*cos(theta[1]) + offset[0],
+          l1*sin(theta[1]) + offset[1],
+          -l1*cos(-theta[0])*cos(theta[1]) + offset[2]]
+    J4 = [-l2*sin(-theta[2])*cos(-theta[0]) + (-l2*cos(-theta[2]) - l2)*sin(-theta[0])*cos(theta[1]) + offset[0],
+           -(-l2*cos(-theta[2]) - l2)*sin(theta[1]) + offset[1],
+           l2*sin(-theta[0])*sin(-theta[2]) + (-l2*cos(-theta[2]) - l2)*cos(-theta[0])*cos(theta[1]) + offset[2]]
+    
+    return (J12, J3, J4)
 
-def calcErr(theta1, theta2, theta3): # 入力の単位はdeg
-    J3, P = FK(-theta1/180*pi, theta2/180*pi, -theta3/180*pi)
-    x = P[0]
-    y = P[1]
-    z = P[2]
-    theta1d, theta2d, theta3d = IK(x, y, z)
-
+def calcErrRev(theta): # 入力の単位はdeg
+    J12, J3, J4 = legFK([theta[0]/180*pi, theta[1]/180*pi, theta[2]/180*pi], [0, 0, 0])
+    thetaIK, rangeOut = legIK(J4)
     # エラーの単位もdeg
-    err1 = theta1d/pi*180 - theta1
-    err2 = theta2d/pi*180 - theta2
-    err3 = theta3d/pi*180 - theta3
+    if(rangeOut):
+        err1 = "OUT"
+        err2 = "OUT"
+        err3 = "OUT"
+    else:
+        err1 = thetaIK[0]/pi*180 - theta[0]
+        err2 = thetaIK[1]/pi*180 - theta[1]
+        err3 = thetaIK[2]/pi*180 - theta[2]
+
+    return(err1, err2, err3)
+
+def calcErrP(p):
+    thetaIK, rangeOut = legIK(p)
+    J12, J3, J4 = legFK(thetaIK, [0, 0, 0])
+    
+    if(rangeOut):
+        err1 = "OUT"
+        err2 = "OUT"
+        err3 = "OUT"
+    else:
+        err1 = p[0] - J4[0]
+        err2 = p[1] - J4[1]
+        err3 = p[2] - J4[2]
+
+    return(err1, err2, err3)
 
 def main():
-    start_time = time.perf_counter()
-    for i1 in range(0, 36):
-        for i2 in range(0, 36):
-            for i3 in range(0, 36):
-                calcErr(i1*10, i2*10, i3*10)
-    end_time = time.perf_counter()
-    # 経過時間を出力(秒)
-    elapsed_time = end_time - start_time
-    print(elapsed_time)
+    #start_time = time.perf_counter()
+    for i1 in range(-180, 180, 10):
+        for i2 in range(-180, 180, 10):
+            for i3 in range(-180, 180, 10):
+                calcErrP([i1, i2, i3])
+                #print("------------------------------")
+                #print(calcErrP([i1, i2, i3]))
+                #print(i1, i2, i3)
+    
+    #for i1 in range(-180, 180, 10):
+    #    for i2 in range(-180, 180, 10):
+    #        for i3 in range(-180, 180, 10):
+    #            print("------------------------------")
+    #            print(calcErrRev([i1, i2, i3]))
+    #            print(i1, i2, i3)
+
+    #end_time = time.perf_counter()
+    #elapsed_time = end_time - start_time
+    #print(elapsed_time)
+    
+    ########################
+    # 計測結果:1IKに0.028ms#
+    ########################
     
 if __name__ == '__main__':
     main()
