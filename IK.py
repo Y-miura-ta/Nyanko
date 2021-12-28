@@ -3,10 +3,11 @@
 from math import *
 #import time
 
-MIN_RXZ = 10
-MIN_THETA3 = 1e-3
 l1 = 90
 l2 = 90
+MIN_RXZ = 10
+L = 100
+W = 50
 
 def legIK(p):
     x = p[0]
@@ -33,14 +34,6 @@ def legIK(p):
         return [theta1, theta2, theta3], rangeOut
         
     theta3 = acos(-(l1**2+l2**2-r2)/(2*l1*l2))
-    if(theta3 < MIN_THETA3): # 脚が伸び切っていると特異点に入りやすいので除外
-        theta1 = 0.0
-        theta2 = 0.0
-        theta3 = 0.0
-        rangeOut = True
-
-        return [theta1, theta2, theta3], rangeOut
-        
     lx = l2*sin(theta3)
     al = atan2(-z, x)
     lxrxz = lx/rxz
@@ -53,6 +46,29 @@ def legIK(p):
     rangeOut = False
 
     return [theta1, theta2, theta3], rangeOut
+
+def legSmartIK(p, p_theta, jointRangeOut): # レンジ外が入力された場合、前回位置に向かう
+    if(jointRangeOut):
+        theta[0] = p_theta[0]
+        theta[1] = p_theta[1]
+        theta[1] = p_theta[1]
+        preTheta = True
+
+        return theta, preTheta
+    else:
+        theta, rangeOut = legIK(p)
+        if(rangeOut):
+            theta[0] = p_theta[0]
+            theta[1] = p_theta[1]
+            theta[1] = p_theta[1]
+            preTheta = True
+            
+            return theta, preTheta
+        
+        else:
+            preTheta = False
+
+            return theta, preTheta
 
 def legFK(theta, offset): # 関節の正回転方向と座標変換の正回転方向が逆の場合があるので注意
     J12 = [0 + offset[0],
@@ -82,31 +98,33 @@ def calcErrRev(theta): # 入力の単位はdeg
 
     return(err1, err2, err3)
 
-def calcErrP(p):
-    thetaIK, rangeOut = legIK(p)
+def calcErrP(p, p_theta):
+    thetaIK, pastTheta = legSmartIK(p, p_theta, False)
     J12, J3, J4 = legFK(thetaIK, [0, 0, 0])
     
-    if(rangeOut):
-        err1 = "OUT"
-        err2 = "OUT"
-        err3 = "OUT"
+    if(pastTheta):
+        err1 = "pre_pos"
+        err2 = "pre_pos"
+        err3 = "pre_pos"
     else:
         err1 = p[0] - J4[0]
         err2 = p[1] - J4[1]
         err3 = p[2] - J4[2]
 
-    return(err1, err2, err3)
+    return(err1, err2, err3), thetaIK
 
 def main():
+    p_theta = [0, 0, 0]
     #start_time = time.perf_counter()
     for i1 in range(-180, 180, 10):
         for i2 in range(-180, 180, 10):
             for i3 in range(-180, 180, 10):
-                calcErrP([i1, i2, i3])
-                #print("------------------------------")
-                #print(calcErrP([i1, i2, i3]))
-                #print(i1, i2, i3)
-    
+                err, theta = calcErrP([i1, i2, i3], p_theta)
+                print(err)
+                p_theta[0] = theta[0]
+                p_theta[1] = theta[1]
+                p_theta[2] = theta[2]
+                
     #for i1 in range(-180, 180, 10):
     #    for i2 in range(-180, 180, 10):
     #        for i3 in range(-180, 180, 10):
