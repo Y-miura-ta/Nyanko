@@ -48,7 +48,7 @@ def calcVelocity(fact_xyz, t):
     
     return [vx, vy, vz]
 
-# 遊脚前半、次回目標位置計算
+# 次回目標位置と理論上の速度を計算
 def calcNextPV(p_str, p_cur, p_obj, v_str, v_cur, v_obj, t_str, t_cur, t_obj, dt):
     t = [t_str, t_cur, t_obj, t_str, t_cur, t_obj]
     fact_xyz = calcQuinticFactorXYZ(p_str, p_cur, p_obj, v_str, v_cur, v_obj, t)
@@ -57,8 +57,18 @@ def calcNextPV(p_str, p_cur, p_obj, v_str, v_cur, v_obj, t_str, t_cur, t_obj, dt
 
     return p_next, v_next
 
+# 遊脚期前半hip座標系
+def floatUp(p_cur, p_touch, v_cur, v_obj, up_height, t_cur, T, dt):
+    p_top = p_touch - v_obj*T/4 + up_height
+    # 時間は立脚期開始地点がスタート
+    p_next, v_next = calcNextPV(p_cur, p_top, p_touch, v_cur, -2*v_obj, v_obj, t_cur, 3*T/4, T, dt)
+
+    return p_next, v_next
+
+# 時間を分割してarrayに格納 # いらない
 def timeDiv(t_start, t_goal, div_num):
-    
+    t = np.linspace(t_start, t_goal, div_num)
+    return t
 
 # 目標位置までを分割数で割ったベクトルを返す
 def linearDiv(p_start, p_goal, div_num):
