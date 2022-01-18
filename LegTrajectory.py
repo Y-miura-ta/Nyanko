@@ -183,7 +183,7 @@ def main():
     h_offset = 3
     T = 0.5
     dt = 0.01 # 最小：0.001
-    trj = calcTrajectory(state_cur, v_body_tar, v_body_obs, leg_center, body_h, leg_up_h, h_offset, T, dt)
+    trj = makeTrajectoryList(state_cur, v_body_tar, v_body_obs, leg_center, body_h, leg_up_h, h_offset, T, dt)
 
     limit = 2000
     ax = plt.axes(projection="3d")
@@ -199,51 +199,6 @@ def main():
     #plt.plot(trj[3], trj[1][2])
     #plt.plot(trj[3], trj[2][2])
     plt.show()
-
-# def main():
-#     import dearpygui.dearpygui as dpg
-#     dpg.create_context()
-
-#     with dpg.window(label="5th Spline", tag="win"):
-#         p0_x = dpg.add_slider_float(label="p0_x", default_value=-1, max_value=10.0, min_value=-10.0, format="p0 x = %.3f")
-#         p1_x = dpg.add_slider_float(label="p1_x", default_value=0, max_value=10.0, min_value=-10.0, format="p1 x = %.3f")
-#         v0_x = dpg.add_slider_float(label="v0_x", default_value=0, max_value=1.0, min_value=-1.0, format="v0 x = %.3f")
-#         v1_x = dpg.add_slider_float(label="v1_x", default_value=0, max_value=1.0, min_value=-1.0, format="v1 x = %.3f")
-#         a0_x = dpg.add_slider_float(label="a0_x", default_value=0, max_value=10.0, min_value=-10.0, format="a0 x = %.3f")
-#         a1_x = dpg.add_slider_float(label="a1_x", default_value=0, max_value=10.0, min_value=-10.0, format="a1 x = %.3f")
-#         t0 = dpg.add_slider_float(label="t0", default_value=0, max_value=1.0, min_value=0.0, format="t0 = %.3f")
-#         t1 = dpg.add_slider_float(label="t1", default_value=1.0, max_value=1.0, min_value=0.0, format="t1 = %.3f")
-
-#         # create plot
-#         with dpg.plot(label="Graph", width=1000, height=600):
-#             # optionally create legend
-#             dpg.add_plot_legend()
-
-#             # REQUIRED: create x and y axes
-#             dpg.add_plot_axis(dpg.mvXAxis, label="t")
-#             dpg.add_plot_axis(dpg.mvYAxis, label="x", tag="x_axis")
-
-#             # series belong to a y axis
-#             dpg.add_line_series([0], [0], label="px time line", parent="x_axis", tag="series_tag")
-
-#     dpg.create_viewport(title='LegTrajectory.py', width=1200, height=800)
-#     dpg.setup_dearpygui()
-#     dpg.show_viewport()
-#     # dpg.start_dearpygui()
-#     while dpg.is_dearpygui_running():
-#             _p0_x = dpg.get_value(p0_x)
-#             _p1_x = dpg.get_value(p1_x)
-#             _v0_x = dpg.get_value(v0_x)
-#             _v1_x = dpg.get_value(v1_x)
-#             _a0_x = dpg.get_value(a0_x)
-#             _a1_x = dpg.get_value(a1_x)
-#             _t0 = dpg.get_value(t0)
-#             _t1 = dpg.get_value(t1)
-
-#             ts, ps = next_point_calc(_p0_x, _p1_x, _v0_x, _v1_x, _a0_x, _a1_x, _t0, _t1)
-#             dpg.set_value('series_tag', [ts, ps])
-#             dpg.render_dearpygui_frame()
-#     dpg.destroy_context()
     
 if __name__ == '__main__':
     main()

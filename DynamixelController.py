@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+from turtle import pos
 from dynamixel_sdk import *
 import time
 
@@ -17,9 +18,6 @@ DEVICENAME                  = '/dev/ttyUSB0'
 TORQUE_ENABLE               = 1
 TORQUE_DISABLE              = 0
 DXL_MOVING_STATUS_THRESHOLD = 20
-
-# index = 0
-# dxl_goal_position = [DXL_MINIMUM_POSITION_VALUE, DXL_MAXIMUM_POSITION_VALUE]
 
 portHandler = PortHandler(DEVICENAME)
 packetHandler = PacketHandler(PROTOCOL_VERSION)
@@ -119,7 +117,23 @@ def syncreadPos(dxl_id_list):
     return pos_list
 
 def main():
-    print("void")
+    dxl_id_list = [1]
+    pos_list1 = [DXL_MINIMUM_POSITION_VALUE]
+    pos_list2 = [DXL_MAXIMUM_POSITION_VALUE]
+    setDXL()
+    torqueON(dxl_id_list)
+    syncwritePos(dxl_id_list,pos_list1)
+    time.sleep(3)
+    pos_list_now = syncreadPos(dxl_id_list)
+    print(pos_list_now)
+    time.sleep(1)
+    syncwritePos(dxl_id_list,pos_list2)
+    time.sleep(3)
+    pos_list_now = syncreadPos(dxl_id_list)
+    print(pos_list_now)
+    time.sleep(1)
+    torqueOFF(dxl_id_list)
+    closePort()
 
 if __name__ == '__main__':
     main()
