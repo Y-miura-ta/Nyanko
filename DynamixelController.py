@@ -117,9 +117,9 @@ def syncreadPos(dxl_id_list):
     return pos_list
 
 def main():
-    dxl_id_list = [1]
-    pos_list1 = [DXL_MINIMUM_POSITION_VALUE]
-    pos_list2 = [DXL_MAXIMUM_POSITION_VALUE]
+    dxl_id_list = [1, 7]
+    pos_list1 = [DXL_MINIMUM_POSITION_VALUE, DXL_MINIMUM_POSITION_VALUE]
+    pos_list2 = [DXL_MAXIMUM_POSITION_VALUE, DXL_MAXIMUM_POSITION_VALUE]
     setDXL()
     torqueON(dxl_id_list)
     syncwritePos(dxl_id_list,pos_list1)
