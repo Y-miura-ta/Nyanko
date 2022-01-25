@@ -5,6 +5,7 @@ from math import *
 
 l1 = 90
 l2 = 90
+sole_r = 20 # 未確認
 MIN_RXZ = 10
 L = 100
 W = 50
@@ -49,9 +50,7 @@ def legIK(p):
 
 def legSmartIK(p, p_theta, jointRangeOut): # レンジ外が入力された場合、前回位置に向かう
     if(jointRangeOut):
-        theta[0] = p_theta[0]
-        theta[1] = p_theta[1]
-        theta[1] = p_theta[1]
+        theta = [p_theta[0], p_theta[1], p_theta[2]]
         preTheta = True
 
         return theta, preTheta
@@ -60,7 +59,7 @@ def legSmartIK(p, p_theta, jointRangeOut): # レンジ外が入力された場�
         if(rangeOut):
             theta[0] = p_theta[0]
             theta[1] = p_theta[1]
-            theta[1] = p_theta[1]
+            theta[2] = p_theta[2]
             preTheta = True
             
             return theta, preTheta
