@@ -27,8 +27,8 @@ class timerIMU():
         signal.signal(signal.SIGALRM, self.setEvent)
         # IMUの値が安定するまで3秒待つ
         signal.setitimer(signal.ITIMER_REAL, 3.0, self.dt)
-        thread = threading.Thread(target=self.velIntegral)
-        thread.start()
+        self.thread = threading.Thread(target=self.velIntegral)
+        self.thread.start()
     
     def setEvent(self, arg1, arg2):
         self.event.set()
@@ -47,6 +47,7 @@ class timerIMU():
             self.a = self.rot@Acc
             # 積分
             self.v = self.v*self.alpha + self.a*self.real_dt
+            print(self.real_dt)
             self.p = self.p + self.v*self.real_dt
             self.controll_time = time_now
             self.event.clear()
@@ -85,7 +86,7 @@ def main():
         print("time:{}".format(time_now))
         #print("dt:{}, world_vel_x:{}, world_vel_y:{}, world_vel_z:{}".format(real_dt, v_IMU[0], v_IMU[1], v_IMU[2]))
         #print("------------------------------------------------------------------------------------------")
-        time.sleep(0.005)    
+        time.sleep(0.005)
     file.close()
 
 if __name__ == '__main__':
