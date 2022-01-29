@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import threading
 import time
 import board
@@ -47,7 +49,6 @@ class timerIMU():
             self.a = self.rot@Acc
             # 積分
             self.v = self.v*self.alpha + self.a*self.real_dt
-            print(self.real_dt)
             self.p = self.p + self.v*self.real_dt
             self.controll_time = time_now
             self.event.clear()

@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-import os
+
+from this import d
 from turtle import pos
 from dynamixel_sdk import *
 import time
+import math
 
 ADDR_TORQUE_ENABLE          = 64
 ADDR_GOAL_POSITION          = 116
@@ -10,6 +12,7 @@ LEN_GOAL_POSITION           = 4
 ADDR_PRESENT_POSITION       = 132
 LEN_PRESENT_POSITION        = 4
 DXL_MINIMUM_POSITION_VALUE  = 0
+DXL_MEDIUM_POSITION_VALUE = 2048
 DXL_MAXIMUM_POSITION_VALUE  = 4095
 BAUDRATE                    = 57600
 PROTOCOL_VERSION            = 2.0
@@ -18,6 +21,9 @@ DEVICENAME                  = '/dev/ttyUSB0'
 TORQUE_ENABLE               = 1
 TORQUE_DISABLE              = 0
 DXL_MOVING_STATUS_THRESHOLD = 20
+
+DXLPOS_2_RAD = 2*math.pi/(DXL_MAXIMUM_POSITION_VALUE-DXL_MINIMUM_POSITION_VALUE)
+RAD_2_DXLPOS = (DXL_MAXIMUM_POSITION_VALUE-DXL_MINIMUM_POSITION_VALUE)/(2*math.pi)
 
 portHandler = PortHandler(DEVICENAME)
 packetHandler = PacketHandler(PROTOCOL_VERSION)
@@ -64,7 +70,7 @@ def torqueOFF(dxl_id_list):
         elif dxl_error != 0:
             print("%s" % packetHandler.getRxPacketError(dxl_error))
 
-def setSyncwriteID(dxl_id_list):
+def setID(dxl_id_list):
     # Syncwriteで書き込むIDをセット
     for id in dxl_id_list:
         dxl_addparam_result = groupSyncRead.addParam(id)
@@ -82,7 +88,7 @@ def setGoalPos(dxl_id_list, goal_pos_list):
             quit()
 
 def syncwritePos(dxl_id_list, goal_pos_list):
-    setSyncwriteID(dxl_id_list)
+    setID(dxl_id_list)
     setGoalPos(dxl_id_list, goal_pos_list)
     dxl_comm_result = groupSyncWrite.txPacket()
     if dxl_comm_result != COMM_SUCCESS:
@@ -106,6 +112,7 @@ def getPosData(dxl_id_list):
     return pos_list
 
 def syncreadPos(dxl_id_list):
+    setID(dxl_id_list)
     dxl_comm_result = groupSyncRead.txRxPacket()
     if dxl_comm_result != COMM_SUCCESS:
         print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
