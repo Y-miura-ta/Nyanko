@@ -10,6 +10,14 @@ MIN_RXZ = 10
 L = 100
 W = 50
 
+def regionCut(p, leg_num):
+    if(p[2]<-68.0):
+        rangeOut = False
+    else:
+        rangeOut = True
+
+    return rangeOut
+
 def legIK(p):
     x = p[0]
     y = p[1]
@@ -48,8 +56,8 @@ def legIK(p):
 
     return [theta1, theta2, theta3], rangeOut
 
-def legSmartIK(p, p_theta, jointRangeOut): # レンジ外が入力された場合、前回位置に向かう
-    if(jointRangeOut):
+def legSmartIK(p, p_theta, leg_num): # レンジ外が入力された場合、前回位置に向かう
+    if(regionCut(p, leg_num)):
         theta = [p_theta[0], p_theta[1], p_theta[2]]
         preTheta = True
 

@@ -96,6 +96,7 @@ def calcBalancePVA(state_cur, v_body_tar, v_body_obs, leg_center, body_h, leg_up
     _v_body_obs = np.array(v_body_obs)
     _leg_center = np.array(leg_center)
     _v_leg_stance = -_v_body_tar - 4/T*(_v_body_obs - _v_body_tar)*(body_h/g)**0.5
+    alpha = 3.0
     
     if(state_cur[3]>=T_list[0] and state_cur[3]<T_list[1]):
         p_bottom = _leg_center - np.array([0, 0, h_offset])
@@ -111,7 +112,7 @@ def calcBalancePVA(state_cur, v_body_tar, v_body_obs, leg_center, body_h, leg_up
         # p_next[1] = state_cur[0][1] + _v_leg_stance[1]*dt
 
     elif(state_cur[3]>=T_list[1] and state_cur[3]<T_list[2]):
-        p_up = _leg_center - T/4*_v_body_tar - (_v_body_obs - _v_body_tar)*(body_h/g)**0.5
+        p_up = _leg_center - T/4*_v_body_tar - (_v_body_obs*alpha - _v_body_tar)*(body_h/g)**0.5
         a_up = [0, 0, 0]
         p = [state_cur[0], p_up]
         v = [state_cur[1], _v_leg_stance]
@@ -134,7 +135,7 @@ def calcBalancePVA(state_cur, v_body_tar, v_body_obs, leg_center, body_h, leg_up
         p_next, v_next, a_next = calcNextPVA(p, v, a, t, dt)
 
     elif(state_cur[3]>=T_list[3] and state_cur[3]<T_list[4]):
-        p_touch = _leg_center + T/4*_v_body_tar + (_v_body_obs - _v_body_tar)*(body_h/g)**0.5
+        p_touch = _leg_center + T/4*_v_body_tar + (_v_body_obs*alpha - _v_body_tar)*(body_h/g)**0.5
         a_touch = [0, 0, 0]
         p = [state_cur[0], p_touch]
         v = [state_cur[1], _v_leg_stance]
@@ -181,8 +182,8 @@ def main():
     body_h = 95
     leg_up_h = 40
     h_offset = 3
-    T = 0.5
-    dt = 0.01 # 最小：0.001
+    T = 0.3
+    dt = 0.05 # 最小：0.001
     trj = makeTrajectoryList(state_cur, v_body_tar, v_body_obs, leg_center, body_h, leg_up_h, h_offset, T, dt)
 
     limit = 2000

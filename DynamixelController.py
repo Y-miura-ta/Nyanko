@@ -88,7 +88,7 @@ def setGoalPos(dxl_id_list, goal_pos_list):
             quit()
 
 def syncwritePos(dxl_id_list, goal_pos_list):
-    setID(dxl_id_list)
+    #setID(dxl_id_list)
     setGoalPos(dxl_id_list, goal_pos_list)
     dxl_comm_result = groupSyncWrite.txPacket()
     if dxl_comm_result != COMM_SUCCESS:

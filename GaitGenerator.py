@@ -5,6 +5,7 @@ import time
 import LegTrajectory as lt
 import IK
 import TimerIMU as ti
+import DynamixelController as dc
 
 class quadrupedGait():
     def __init__(self, _leg_centers, _leg_start_states, _body_h, _leg_up_h, _h_offset, _T, _dt, _classIMU):
@@ -37,6 +38,9 @@ class quadrupedGait():
         self.t_cur_list = [0.0, self.T/2.0, self.T/2.0, 0.0]
         self.real_dt = self.dt
         self.controll_time = time.time()
+
+        dc.setDXL()
+        dc.torqueON([1, 2, 3])
 
         self.thread = threading.Thread(target=self.trajectoryLoop)
         self.thread.start()
@@ -75,12 +79,14 @@ class quadrupedGait():
         time_now = time.time()
         self.real_dt = time_now - self.controll_time
         vel_b_h = self.calcBodyVelHorizontal()
-        for leg_num in range(4):
+        for leg_num in range(1):
             self.leg_cur_states[leg_num][3] = self.t_cur_list[leg_num]
             state_next = self.calcNextLegState(vel_b_h, leg_num, self.t_cur_list[leg_num])
-            # ここで関節可動域内か判断する
-            joint_range_out = False
-            self.theta_list[leg_num], self.pre_theta_flag[leg_num] = IK.legSmartIK(state_next[0], self.theta_pre_list[leg_num], joint_range_out)
+            self.theta_list[leg_num], self.pre_theta_flag[leg_num] = IK.legSmartIK(state_next[0], self.theta_pre_list[leg_num], leg_num)
+            pos_f = dc.DXL_MEDIUM_POSITION_VALUE*np.ones(3) + np.array(self.theta_list[leg_num])*np.array([-1.0, -1.0, 1.0])*dc.RAD_2_DXLPOS
+            pos_i = [int(pos_f[0]), int(pos_f[1]), int(pos_f[2])]
+            #print(pos_i)
+            dc.syncwritePos([1, 2, 3], pos_i)
             self.theta_pre_list[leg_num] = self.theta_list[leg_num]
             self.t_cur_list[leg_num] = state_next[3]
         self.controll_time = time_now

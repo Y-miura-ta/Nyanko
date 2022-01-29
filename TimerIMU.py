@@ -43,7 +43,7 @@ class timerIMU():
             quat = self.sensor.quaternion
             acc = self.sensor.linear_acceleration
             self.q = np.quaternion(quat[0], quat[1], quat[2], quat[3])
-            Acc = np.array([acc[0], acc[1], acc[2]])
+            Acc = np.array([acc[0], acc[1], acc[2]])*1000 # 単位をmmに変換
             self.rot = quaternion.as_rotation_matrix(self.q)
             self.real_dt = time_now - self.controll_time
             self.a = self.rot@Acc
