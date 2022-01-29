@@ -11,7 +11,7 @@ import IK
 import TimerIMU as ti
 
 class quadrupedGait():
-    def __init__(self, _leg_centers, _leg_start_states, _body_h, _leg_up_h, _h_offset, _T, _dt):#, _classIMU):
+    def __init__(self, _leg_centers, _leg_start_states, _body_h, _leg_up_h, _h_offset, _T, _dt, _classIMU):
         self.leg_center = _leg_centers
         self.leg_cur_states = _leg_start_states
         self.leg_pre_states = _leg_start_states
@@ -33,7 +33,7 @@ class quadrupedGait():
         self.h_offset = _h_offset
         self.T = _T
         self.dt = _dt
-        self.tIMU = ti.timerIMU(0.015)
+        self.tIMU = _classIMU # ti.timerIMU(0.015)
         self.target_vel = [0.0, 0.0, 0.0]
         self.t_start = [0.0, self.T/2.0, self.T/2.0, 0.0]
         self.t_cur_list = [0.0, self.T/2.0, self.T/2.0, 0.0]
@@ -135,10 +135,10 @@ def main():
     leg_up_h = 30.0
     h_offset = 3.0
     T = 0.5
-    dt = 0.05
+    dt = 0.005
 
-    qGait = quadrupedGait(leg_centers, leg_start_states, body_h, leg_up_h, h_offset, T, dt)#, tIMU)
-    # tIMU = ti.timerIMU(0.015)
+    tIMU = ti.timerIMU(0.015)
+    qGait = quadrupedGait(leg_centers, leg_start_states, body_h, leg_up_h, h_offset, T, dt, tIMU)
 
     while(True):
         print("-------------------------------")
