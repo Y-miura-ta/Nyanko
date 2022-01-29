@@ -5,6 +5,7 @@ from turtle import pos
 from dynamixel_sdk import *
 import time
 import math
+import numpy as np
 
 ADDR_TORQUE_ENABLE          = 64
 ADDR_GOAL_POSITION          = 116
@@ -24,6 +25,14 @@ DXL_MOVING_STATUS_THRESHOLD = 20
 
 DXLPOS_2_RAD = 2*math.pi/(DXL_MAXIMUM_POSITION_VALUE-DXL_MINIMUM_POSITION_VALUE)
 RAD_2_DXLPOS = (DXL_MAXIMUM_POSITION_VALUE-DXL_MINIMUM_POSITION_VALUE)/(2*math.pi)
+
+# 回転方向の符号
+JOINT_DIREC = np.array([
+    [-1.0, -1.0, 1.0],
+    [-1.0, -1.0, 1.0],
+    [1.0, 1.0, -1.0],
+    [1.0, 1.0, -1.0]
+])
 
 portHandler = PortHandler(DEVICENAME)
 packetHandler = PacketHandler(PROTOCOL_VERSION)

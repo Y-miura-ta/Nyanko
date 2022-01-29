@@ -8,13 +8,6 @@ import DynamixelController as dc
 import TimerIMU as ti
 import GaitGenerator as gg
 
-JOINT_DIREC = np.array([
-    [-1.0, -1.0, 1.0],
-    [-1.0, -1.0, 1.0],
-    [1.0, 1.0, -1.0],
-    [1.0, 1.0, -1.0]
-])
-
 # ロボットの関節を直接動かして座標を確認
 def posPrint():
     pos_list = dc.syncreadPos(dc.DXL_ID_LIST)
@@ -26,13 +19,13 @@ def posPrint():
     ])
     xyz_pos = []
     rad_list2 = []
-    rad_list = (pos_leg-np.ones((4, 3))*dc.DXL_MEDIUM_POSITION_VALUE)*JOINT_DIREC*dc.DXLPOS_2_RAD
+    rad_list = (pos_leg-np.ones((4, 3))*dc.DXL_MEDIUM_POSITION_VALUE)*dc.JOINT_DIREC*dc.DXLPOS_2_RAD
     for rad in rad_list:
         xyz = IK.legFK(rad, [0, 0, 0])[2]
         xyz_pos.append(xyz)
         rad_list2.append(IK.legSmartIK(xyz, rad, False))
 
-    print("DXLpos : {}".format((pos_leg-np.ones((4, 3))*dc.DXL_MEDIUM_POSITION_VALUE)*JOINT_DIREC))
+    print("DXLpos : {}".format((pos_leg-np.ones((4, 3))*dc.DXL_MEDIUM_POSITION_VALUE)*dc.JOINT_DIREC))
     print("XYZpos list : {}".format(xyz_pos))
     print("rad2 : {}".format(rad_list2))
 

@@ -56,7 +56,12 @@ def legIK(p):
 
     return [theta1, theta2, theta3], rangeOut
 
-def legSmartIK(p, p_theta, leg_num): # レンジ外が入力された場合、前回位置に向かう
+def legSmartIK(_p, p_theta, leg_num): # レンジ外が入力された場合、前回位置に向かう
+    # 左右対称のためy軸反転
+    if(leg_num == 2 or leg_num == 3):
+        p = [_p[0], -_p[1], _p[2]]
+    else:
+        p = [_p[0], _p[1], _p[2]]
     if(regionCut(p, leg_num)):
         theta = [p_theta[0], p_theta[1], p_theta[2]]
         preTheta = True

@@ -96,7 +96,7 @@ def calcBalancePVA(state_cur, v_body_tar, v_body_obs, leg_center, body_h, leg_up
     _v_body_obs = np.array(v_body_obs)
     _leg_center = np.array(leg_center)
     _v_leg_stance = -_v_body_tar - 4/T*(_v_body_obs - _v_body_tar)*(body_h/g)**0.5
-    alpha = 3.0
+    alpha = 1.0
     
     if(state_cur[3]>=T_list[0] and state_cur[3]<T_list[1]):
         p_bottom = _leg_center - np.array([0, 0, h_offset])
