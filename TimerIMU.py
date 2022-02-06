@@ -21,7 +21,7 @@ class timerIMU():
         self.p = np.array([0.0, 0.0, 0.0])
         self.v = np.array([0.0, 0.0, 0.0])
         self.a = np.array([0.0, 0.0, 0.0])
-        self.alpha = 0.8 # 過去の値に係数をかけて積分値を安定させる
+        self.alpha = 0.3#0.8 # 過去の値に係数をかけて積分値を安定させる
         self.dt = _dt
         self.real_dt = self.dt
         self.controll_time = time.time()

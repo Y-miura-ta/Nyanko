@@ -33,6 +33,7 @@ JOINT_DIREC = np.array([
     [1.0, 1.0, -1.0],
     [1.0, 1.0, -1.0]
 ])
+JOINT_DIREC_FLAT = JOINT_DIREC.flatten()
 
 portHandler = PortHandler(DEVICENAME)
 packetHandler = PacketHandler(PROTOCOL_VERSION)
