@@ -3,6 +3,7 @@ import threading
 import signal
 import time
 import csv
+import pandas as pd
 
 import IK
 import DynamixelController as dc
@@ -12,7 +13,13 @@ def dxlPos2Rad(dxl_pos_list):
     dxl_pos_array = np.array(dxl_pos_list)
     rad_array = (dxl_pos_array - dc.DXL_MEDIUM_POSITION_VALUE*np.ones(list_len))*dc.DXLPOS_2_RAD*dc.JOINT_DIREC_FLAT
 
-    return rad_array.reshape(4, 3)
+    return rad_array
+
+def rad2dxlPos(rad_array):
+    pos_f = dc.DXL_MEDIUM_POSITION_VALUE*np.ones(len(rad_array)) + rad_array*dc.JOINT_DIREC_FLAT*dc.RAD_2_DXLPOS
+    pos_i = pos_f.astype(int)
+
+    return pos_i
 
 def dxlPos2XYZ(dxl_pos_list):
     rad_array = dxlPos2Rad(dxl_pos_list)
@@ -36,13 +43,13 @@ class timerCapture():
 
         self.log_file = './capture_log.csv'
         self.file = open(self.log_file, 'w')
-        print("file open")
+        print("Logfile open")
         self.writer = csv.writer(self.file)
         data = ['TimeStamp']
+        for i in range(12):
+            data.append("joint_{}_rad".format(i+1))
         self.writer.writerow(data)
-        #self.file.close()
-        #print("file close")
-
+        
         dc.setDXL()
         dc.torqueOFF(dc.DXL_ID_LIST)
 
@@ -68,15 +75,13 @@ class timerCapture():
     def captureLoop(self):
         while(self.capture_flag):
             self.event.wait()
-            #dc.setID(dc.DXL_ID_LIST)
             self.pos_list = dc.syncreadPos(dc.DXL_ID_LIST)
+            rad_list = dxlPos2Rad(self.pos_list)
             #self.xyz_list = dxlPos2XYZ(self.pos_list)
-            #dc.clearID()
             
             time_now = time.time()
             self.real_dt = time_now - self.controll_time
-            data = [self.real_dt]
-            data.append(self.pos_list)
+            data = np.insert(rad_list, 0, self.real_dt)
             self.writer.writerow(data)
             #print(self.real_dt)
             # print(self.real_dt, self.xyz_list)
@@ -85,20 +90,74 @@ class timerCapture():
             self.controll_time = time_now
             self.event.clear()
 
+class timerPlayback():
+    def __init__(self, _dt):
+        self.dt = _dt
+        self.real_dt = self.dt
+        self.controll_time = time.time()
+
+        self.pos_list = []
+        self.xyz_list = []
+
+        self.capture_flag = True
+
+        self.log_file = './capture_log.csv'
+        log_data_df = pd.read_csv(self.log_file)
+        self.log_data = log_data_df.values
+        print("Log file loaded")
+        self.playback_index = 0
+
+        dc.setDXL()
+        dc.torqueON(dc.DXL_ID_LIST)
+
+        self.event = threading.Event()
+        signal.signal(signal.SIGALRM, self.setEvent)
+        # 念のため1秒待つ
+        signal.setitimer(signal.ITIMER_REAL, 1.0, self.dt)
+
+    def startPlayback(self):
+        self.capture_flag = True
+        #dc.setID(dc.DXL_ID_LIST)
+        self.thread = threading.Thread(target=self.playbackLoop)
+        self.thread.start()
+
+    def stopPlayback(self):
+        self.capture_flag = False
+        self.thread.join()
+        dc.torqueOFF(dc.DXL_ID_LIST)
+    
+    def setEvent(self, arg1, arg2):
+        self.event.set()
+
+    def playbackLoop(self):
+        while(self.capture_flag):
+            self.event.wait()
+            rad_array = self.log_data[self.playback_index]
+            # 先頭には実行時間が入っているので削除
+            pos_array = rad2dxlPos(np.delete(rad_array, 0))
+            dc.syncwritePos(dc.DXL_ID_LIST, pos_array)
+            self.playback_index += 5
+
+            time_now = time.time()
+            self.real_dt = time_now - self.controll_time
+            
+            self.controll_time = time_now
+            self.event.clear()
+
 def main():
-    tCap = timerCapture(0.07)
-    
-    # self.writer = csv.writer(file)
-    # self.writer.writerow(['TimeStamp'])
-    tCap.startCapture()
-    # while(True):
-    #     print("-------------------------------")
-    
-    time.sleep(3)
-    tCap.stopCapture()
-    time.sleep(1)
-    #tCap.startCapture()
-    tCap.file.close()
+    print("Wait 3 seconds")
+    # time.sleep(3)
+    # tCap = timerCapture(0.07)
+    # tCap.startCapture()
+    # time.sleep(40)
+    # tCap.stopCapture()
+    # time.sleep(1)
+    # #tCap.startCapture()
+    # tCap.file.close()
+    tPlay = timerPlayback(0.07)
+    tPlay.startPlayback()
+    time.sleep(20)
+    tPlay.stopPlayback()
     
 if __name__ == '__main__':
     main()
