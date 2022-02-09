@@ -81,12 +81,15 @@ def torqueOFF(dxl_id_list):
             print("%s" % packetHandler.getRxPacketError(dxl_error))
 
 def setID(dxl_id_list):
-    # Syncwriteで書き込むIDをセット
+    # Syncreadで読み取るIDをセット
     for id in dxl_id_list:
         dxl_addparam_result = groupSyncRead.addParam(id)
         if dxl_addparam_result != True:
             print("[ID:%03d] groupSyncRead addparam failed" % id)
             quit()
+
+def clearID():
+    groupSyncRead.clearParam()
 
 def setGoalPos(dxl_id_list, goal_pos_list):
     # Syncwriteで書き込むポジションをセット
@@ -98,7 +101,6 @@ def setGoalPos(dxl_id_list, goal_pos_list):
             quit()
 
 def syncwritePos(dxl_id_list, goal_pos_list):
-    #setID(dxl_id_list)
     setGoalPos(dxl_id_list, goal_pos_list)
     dxl_comm_result = groupSyncWrite.txPacket()
     if dxl_comm_result != COMM_SUCCESS:
@@ -122,14 +124,14 @@ def getPosData(dxl_id_list):
     return pos_list
 
 def syncreadPos(dxl_id_list):
-    setID(dxl_id_list)
+    #setID(dxl_id_list)
     dxl_comm_result = groupSyncRead.txRxPacket()
     if dxl_comm_result != COMM_SUCCESS:
         print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
     checkSyncreadData(dxl_id_list)
     pos_list = getPosData(dxl_id_list)
     # Syncreadの設定をクリア
-    groupSyncRead.clearParam()
+    #groupSyncRead.clearParam()
     
     return pos_list
 
