@@ -35,6 +35,14 @@ JOINT_DIREC = np.array([
 ])
 JOINT_DIREC_FLAT = JOINT_DIREC.flatten()
 
+JOINT_DIREC2 = np.array([
+    [-1.0, 1.0, 1.0],
+    [-1.0, 1.0, 1.0],
+    [1.0, 1.0, -1.0],
+    [1.0, 1.0, -1.0]
+])
+JOINT_DIREC_FLAT2 = JOINT_DIREC2.flatten()
+
 portHandler = PortHandler(DEVICENAME)
 packetHandler = PacketHandler(PROTOCOL_VERSION)
 groupSyncWrite = GroupSyncWrite(portHandler, packetHandler, ADDR_GOAL_POSITION, LEN_GOAL_POSITION)

@@ -1,4 +1,7 @@
 import numpy as np
+import socket
+import pickle
+
 import threading
 import signal
 import time
@@ -8,6 +11,14 @@ import pandas as pd
 import IK
 import DynamixelController as dc
 
+host = "192.168.0.232"
+port = 50000
+
+serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+serversock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+serversock.bind((host,port))
+serversock.listen(10)
+
 def dxlPos2Rad(dxl_pos_list):
     list_len = len(dxl_pos_list)
     dxl_pos_array = np.array(dxl_pos_list)
@@ -16,7 +27,7 @@ def dxlPos2Rad(dxl_pos_list):
     return rad_array
 
 def rad2dxlPos(rad_array):
-    pos_f = dc.DXL_MEDIUM_POSITION_VALUE*np.ones(len(rad_array)) + rad_array*dc.JOINT_DIREC_FLAT*dc.RAD_2_DXLPOS
+    pos_f = dc.DXL_MEDIUM_POSITION_VALUE*np.ones(len(rad_array)) - rad_array*dc.JOINT_DIREC_FLAT2*dc.RAD_2_DXLPOS
     pos_i = pos_f.astype(int)
 
     return pos_i
@@ -145,19 +156,18 @@ class timerPlayback():
             self.event.clear()
  
 def main():
-    print("Wait 3 seconds")
-    # time.sleep(3)
-    # tCap = timerCapture(0.07)
-    # tCap.startCapture()
-    # time.sleep(40)
-    # tCap.stopCapture()
-    # time.sleep(1)
-    # #tCap.startCapture()
-    # tCap.file.close()
-    tPlay = timerPlayback(0.07)
-    tPlay.startPlayback()
-    time.sleep(20)
-    tPlay.stopPlayback()
+    print('Waiting for connections...')
+    clientsock, client_address = serversock.accept()
+    dc.setDXL()
+    dc.torqueON(dc.DXL_ID_LIST)
+    while True:
+        rcvmsg = clientsock.recv(1024)
+        data = pickle.loads(rcvmsg)
+        pos_array = rad2dxlPos(data[0:12])
+        end_signal = data[12]
+        dc.syncwritePos(dc.DXL_ID_LIST, pos_array)
+        print('Received -> %s, %s' % (pos_array, end_signal))
+    clientsock.close()
     
 if __name__ == '__main__':
     main()
