@@ -15,13 +15,14 @@ class timerIMU():
         self.i2c = board.I2C()
         self.sensor = adafruit_bno055.BNO055_I2C(self.i2c)
         print("IMU calibration is done.")
+        self.gyro = np.array([0.0, 0.0, 0.0])
         self.q = np.quaternion(0.0, 0.0, 0.0, 1.0)
         self.rot = quaternion.as_rotation_matrix(self.q)
         # 以下のp, v, aはワールド座標系
         self.p = np.array([0.0, 0.0, 0.0])
         self.v = np.array([0.0, 0.0, 0.0])
         self.a = np.array([0.0, 0.0, 0.0])
-        self.alpha = 0.3#0.8 # 過去の値に係数をかけて積分値を安定させる
+        self.alpha = 0.8 # 過去の値に係数をかけて積分値を安定させる
         self.dt = _dt
         self.real_dt = self.dt
         self.controll_time = time.time()
@@ -41,7 +42,9 @@ class timerIMU():
             self.event.wait()
             time_now = time.time()
             quat = self.sensor.quaternion
+            gyro = self.sensor.gyro
             acc = self.sensor.linear_acceleration
+            self.gyro = np.array([gyro[0], gyro[1], gyro[2]])
             self.q = np.quaternion(quat[0], quat[1], quat[2], quat[3])
             Acc = np.array([acc[0], acc[1], acc[2]])*1000 # 単位をmmに変換
             self.rot = quaternion.as_rotation_matrix(self.q)

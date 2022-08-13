@@ -50,6 +50,7 @@ class quadrupedGait():
         rot_inv = self.tIMU.rot.T
         vel_world_horizontal = np.array([self.tIMU.v[0], self.tIMU.v[1], 0.0])
         vel_body_horizontal = rot_inv@vel_world_horizontal
+        # vel_body_horizontal = np.array([-self.tIMU.gyro[0]*(self.body_h+IK.sole_r), -self.tIMU.gyro[1]*(self.body_h+IK.sole_r), 0.0])
 
         return vel_body_horizontal
 
@@ -111,7 +112,7 @@ def main():
     leg_up_h = 30.0
     h_offset = 3.0
     T = 0.5
-    dt = 0.005
+    dt = 0.05
 
     tIMU = ti.timerIMU(0.015)
     qGait = quadrupedGait(leg_centers, leg_start_states, body_h, leg_up_h, h_offset, T, dt, tIMU)
