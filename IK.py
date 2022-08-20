@@ -1,49 +1,44 @@
 # -*- coding: utf-8 -*-
 
+import numpy as np
 from math import *
-#import time
 
-l1 = 90
-l2 = 90
-sole_r = 20 # 未確認
-MIN_RXZ = 10
-L = 100
-W = 50
+# body parameters
+leg_l1 = 90.0
+leg_l2 = 90.0
+sole_r = 20.0
+body_l = 100.0
+body_w = 50.0
 
-def regionCut(p, leg_num):
-    if(p[2]<-68.0):
-        rangeOut = False
+# calc parameters
+min_rxz = 10.0
+max_z = -68.0
+
+def regionCut(p_target):
+    if(p_target[2] < max_z):
+        range_out = False
     else:
-        rangeOut = True
+        range_out = True
 
-    return rangeOut
+    return range_out
 
-def legIK(p):
-    x = p[0]
-    y = p[1]
-    z = p[2]
-    
+def calcIK(p_target):
+    [x, y, z] = p_target
     r2 = x**2 + y**2 + z**2
-    if(r2 > (l1+l2)**2):
-        theta1 = 0.0
-        theta2 = pi/2
-        theta3 = 0.0
-        rangeOut = True
-        
-        return [theta1, theta2, theta3], rangeOut
-
+    if(r2 > (leg_l1+leg_l2)**2):
+        theta_out = [0.0, pi/2, 0.0]
+        is_range_out = True
+    
+        return theta_out, is_range_out
     rxz2 = x**2 + z**2
     rxz = rxz2**0.5
-    if(rxz < MIN_RXZ):
-        theta1 = 0.0
-        theta2 = 0.0
-        theta3 = 0.0
-        rangeOut = True
+    if(rxz < min_rxz):
+        theta_out = [0.0, 0.0, 0.0]
+        is_range_out = True
 
-        return [theta1, theta2, theta3], rangeOut
-        
-    theta3 = acos(-(l1**2+l2**2-r2)/(2*l1*l2))
-    lx = l2*sin(theta3)
+        return theta_out, is_range_out
+    theta3 = acos(-(leg_l1**2+leg_l2**2-r2)/(2*leg_l1*leg_l2))
+    lx = leg_l2*sin(theta3)
     al = atan2(-z, x)
     lxrxz = lx/rxz
     if(lx > rxz): # 丸め誤差などで起こりうる
@@ -52,105 +47,53 @@ def legIK(p):
     theta1 = be - al
     zd = -x*sin(theta1) + z*cos(theta1)
     theta2 = atan2(y, -zd)
-    rangeOut = False
+    is_range_out = False
 
-    return [theta1, theta2, theta3], rangeOut
+    # θ1、θ3は図形的に軸が反転しているので符号反転
+    return [-theta1, theta2, -theta3], is_range_out
 
-def legSmartIK(_p, p_theta, leg_num): # レンジ外が入力された場合、前回位置に向かう
-    # 左右対称のためy軸反転
+# レンジ外が入力された場合、前回位置に向かう
+def legIK(p_target, theta_pre, leg_num):
+    # 左右対称のため、y軸反転
     if(leg_num == 2 or leg_num == 3):
-        p = [_p[0], -_p[1], _p[2]]
+        p_target_new = p_target*np.array([1, -1, 1])
     else:
-        p = [_p[0], _p[1], _p[2]]
-    if(regionCut(p, leg_num)):
-        theta = [p_theta[0], p_theta[1], p_theta[2]]
-        preTheta = True
+        p_target_new = p_target
+    if(regionCut(p_target_new)):
+        theta_out = theta_pre
+        is_pre_theta = True
 
-        return theta, preTheta
+        return theta_out, is_pre_theta
     else:
-        theta, rangeOut = legIK(p)
-        if(rangeOut):
-            theta[0] = p_theta[0]
-            theta[1] = p_theta[1]
-            theta[2] = p_theta[2]
-            preTheta = True
-            
-            return theta, preTheta
-        
+        theta_out, is_range_out = calcIK(p_target_new)
+        if(is_range_out):
+            theta_out = theta_pre
+            is_pre_theta = True
+      
+            return theta_out, is_pre_theta
         else:
-            preTheta = False
+            is_pre_theta = False
+      
+            return theta_out, is_pre_theta
 
-            return theta, preTheta
+def legFK(theta):
+    R_theta1 = np.array([
+        [cos(theta[0]), 0, sin(theta[0])],
+        [0, 1, 0],
+        [-sin(theta[0]), 0, cos(theta[0])]
+    ])
+    R_theta2 = np.array([
+        [1, 0, 0],
+        [0, cos(theta[1]), -sin(theta[1])],
+        [0, sin(theta[1]), cos(theta[1])]
+    ])
+    R_theta3 = np.array([
+        [cos(theta[2]), 0, sin(theta[2])],
+        [0, 1, 0],
+        [-sin(theta[2]), 0, cos(theta[2])]
+    ])
+    J12 = np.array([0, 0, 0])
+    J3 = J12 + R_theta2@R_theta1@np.array([0, 0, -leg_l1])
+    J4 = J3 + R_theta3@np.array([0, 0, -leg_l2])
 
-def legFK(theta, offset): # 関節の正回転方向と座標変換の正回転方向が逆の場合があるので注意
-    J12 = [0 + offset[0],
-           0 + offset[1],
-           0 + offset[2]]
-    J3 = [-l1*sin(-theta[0])*cos(theta[1]) + offset[0],
-          l1*sin(theta[1]) + offset[1],
-          -l1*cos(-theta[0])*cos(theta[1]) + offset[2]]
-    J4 = [-l2*sin(-theta[2])*cos(-theta[0]) + (-l2*cos(-theta[2]) - l2)*sin(-theta[0])*cos(theta[1]) + offset[0],
-           -(-l2*cos(-theta[2]) - l2)*sin(theta[1]) + offset[1],
-           l2*sin(-theta[0])*sin(-theta[2]) + (-l2*cos(-theta[2]) - l2)*cos(-theta[0])*cos(theta[1]) + offset[2]]
-    
-    return (J12, J3, J4)
-
-def calcErrRev(theta): # 入力の単位はdeg
-    J12, J3, J4 = legFK([theta[0]/180*pi, theta[1]/180*pi, theta[2]/180*pi], [0, 0, 0])
-    thetaIK, rangeOut = legIK(J4)
-    # エラーの単位もdeg
-    if(rangeOut):
-        err1 = "OUT"
-        err2 = "OUT"
-        err3 = "OUT"
-    else:
-        err1 = thetaIK[0]/pi*180 - theta[0]
-        err2 = thetaIK[1]/pi*180 - theta[1]
-        err3 = thetaIK[2]/pi*180 - theta[2]
-
-    return(err1, err2, err3)
-
-def calcErrP(p, p_theta):
-    thetaIK, pastTheta = legSmartIK(p, p_theta, False)
-    J12, J3, J4 = legFK(thetaIK, [0, 0, 0])
-    
-    if(pastTheta):
-        err1 = "pre_pos"
-        err2 = "pre_pos"
-        err3 = "pre_pos"
-    else:
-        err1 = p[0] - J4[0]
-        err2 = p[1] - J4[1]
-        err3 = p[2] - J4[2]
-
-    return(err1, err2, err3), thetaIK
-
-def main():
-    p_theta = [0, 0, 0]
-    #start_time = time.perf_counter()
-    for i1 in range(-180, 180, 10):
-        for i2 in range(-180, 180, 10):
-            for i3 in range(-180, 180, 10):
-                err, theta = calcErrP([i1, i2, i3], p_theta)
-                print(err)
-                p_theta[0] = theta[0]
-                p_theta[1] = theta[1]
-                p_theta[2] = theta[2]
-                
-    #for i1 in range(-180, 180, 10):
-    #    for i2 in range(-180, 180, 10):
-    #        for i3 in range(-180, 180, 10):
-    #            print("------------------------------")
-    #            print(calcErrRev([i1, i2, i3]))
-    #            print(i1, i2, i3)
-
-    #end_time = time.perf_counter()
-    #elapsed_time = end_time - start_time
-    #print(elapsed_time)
-    
-    ########################
-    # 計測結果:1IKに0.028ms#
-    ########################
-    
-if __name__ == '__main__':
-    main()
+    return np.array([J12, J3, J4])
