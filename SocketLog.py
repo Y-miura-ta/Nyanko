@@ -45,7 +45,7 @@ class timerPlayback():
 
         self.capture_flag = True
 
-        self.log_file = './simple_walk.csv'
+        self.log_file = './test_walk.csv'
         log_data_df = pd.read_csv(self.log_file)
         self.log_data = log_data_df.values
         print("Log file loaded")
@@ -101,7 +101,7 @@ class socketCapture():
         print('Waiting for connections...')
         self.clientsock, self.client_address = self.serversock.accept()
 
-        self.log_file = './simple_walk.csv'
+        self.log_file = './test_walk.csv'
         self.file = open(self.log_file, 'w')
         print("Logfile open")
         self.writer = csv.writer(self.file)
